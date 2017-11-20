@@ -71,57 +71,40 @@ export default inject('store')(withApp(observer(NativeTachyons.wrap(class PhotoS
 		} else {
 			selectedPhotos.push(uri);
 		}
-		
-		// this.setState({
-		// 	selectedPhotos: [...selectedPhotos]
-		// })
-		// const group = this.state.photoGroups[groupIndex];
-		// if (!group || !group.selectedPhotos) {
-		// 	alert("gah'");
-		// 	return;
-		// }
-		// let nextSelectedPhotos;
-		// if (group.selectedPhotos[uri]) {
-		// 	this.selectedPhotos.delete(uri);
-		// 	delete group.selectedPhotos[uri]
-		// } else {
-		// 	this.selectedPhotos.add(uri);
-		// 	group.selectedPhotos[uri] = true;
-		// }
-		// const nextGroup = {
-		// 	...group,
-		// 	selectedPhotos: nextSelectedPhotos
-		// }
-		// let nextGroups = [...this.state.photoGroups]
-		// nextGroups[groupIndex] = nextGroup;
-    // 
-		// this.setState({
-		// 	photoGroups: nextGroups
-		// });
-    // 
-		// this.props.store.newEntryScreenValues.selectedPhotos.replace([...this.selectedPhotos])
+		this.setState({
+			selectedPhotos: [...selectedPhotos]
+		})
 	}
 	
 	render() {
 		return (
-				<ScrollView cls='bg-white pa2 pb5'>
-							{this.state.photoGroups.map((group, i) => (
-								<View key={group.label}>
-									<Text>{group.label}</Text>
-									<View cls='flx-i flx-row flx-wrap'>
-										{group.photos.map(e => (
-												<TouchableOpacity key={e.image.uri} onPress={this.toggleSelectedPhoto.bind(this, e.image.uri, i)}>
-													{this.isSelected(e.image.uri) && <Text>SELECTED</Text>}
-													<Image cls={classnames('h3 w3 ma1', {
-														//' h4 w5 pa5': group.selectedPhotos[e.image.uri]
-													})} source={{uri: e.image.uri}}/>
-												</TouchableOpacity>
-										))}
-									</View>
-								</View>
-							))}
-						
-				</ScrollView>
+				<FlatList cls='bg-white pa2 pb5'
+					data={this.state.photoGroups}
+					keyExtractor={(item, index) => item.label}
+					renderItem={({item, index}) => <PhotoGroup 
+						key={item.label} 
+						index={index}
+						isSelected={this.isSelected.bind(this)} 
+						toggleSelectedPhoto={this.toggleSelectedPhoto.bind(this)} 
+						group={item} />} 
+					extraData={this.state}
+				/>
 			)
 		}
 }))))
+
+const PhotoGroup = NativeTachyons.wrap(({group, toggleSelectedPhoto, isSelected}) => (
+	<View key={group.label}>
+		<Text>{group.label}</Text>
+		<View cls='flx-i flx-row flx-wrap'>
+			{group.photos.map(e => (
+					<TouchableOpacity key={e.image.uri} onPress={() => toggleSelectedPhoto(e.image.uri)}>
+							{isSelected(e.image.uri) && <Text>SELECTED</Text>}
+							<Image cls={classnames('h3 w3 mr1 mv1', {
+								//' h4 w5 pa5': group.selectedPhotos[e.image.uri]
+							})} source={{uri: e.image.uri}}/>
+					</TouchableOpacity>
+			))}
+		</View>
+	</View>
+))
