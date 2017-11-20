@@ -1,4 +1,5 @@
 import React from 'react';
+import {observer, inject} from "mobx-react";
 import {
   Text,
   View,
@@ -6,7 +7,8 @@ import {
 	TouchableOpacity,
 	Image,
 	ScrollView,
-	StyleSheet
+	StyleSheet,
+	CameraRoll
 } from 'react-native';
 import startOfMonth from 'date-fns/start_of_month'
 import { Ionicons } from '@expo/vector-icons';
@@ -32,18 +34,17 @@ let Person = t.struct({
 });
 
 //https://stackoverflow.com/questions/24170933/convert-unix-timestamp-to-date-time-javascript
-export default withApp(NativeTachyons.wrap(class HomeScreen extends React.Component {
+export default inject('store')(withApp(NativeTachyons.wrap(observer(class HomeScreen extends React.Component {
 	
 	constructor(...args) {
 		super(...args);
-		
 		const textboxstylesheet = _.cloneDeep(getStyleSheet());
 		textboxstylesheet.textbox.error.height = 100;
 		textboxstylesheet.textbox.normal.height = 100;
 		
 		this.defaultValue = {};
-		if (this.props.app.junk.defaultEntryDate) {
-			this.defaultValue.entrydate = this.props.app.junk.defaultEntryDate;
+		if (this.props.store.newEntryScreenValues.defaultEntryDate) {
+			this.defaultValue.entrydate = this.props.store.newEntryScreenValues.defaultEntryDate;
 		}
 		
 		this.options = {
@@ -72,12 +73,6 @@ export default withApp(NativeTachyons.wrap(class HomeScreen extends React.Compon
 	}
 	
 	async createPost() {
-		//this.props.app.fb.postText('meeeeOOOW!');
-		
-		
-		 //backdated time
-		 
-		let timeStamp = startOfMonth(new Date).getTime();
 		let formValues = this.form.getValue();
 		if (formValues) {
 			const res = await this.props.app.fb.createEntry({
@@ -93,8 +88,8 @@ export default withApp(NativeTachyons.wrap(class HomeScreen extends React.Compon
 	}
 	
 	componentWillUnmount(){
-		if (this.props.app.junk.defaultEntryDate) {
-			delete this.props.app.junk.defaultEntryDate;
+		if (this.props.store.newEntryScreenValues.defaultEntryDate) {
+			delete this.props.store.newEntryScreenValues.defaultEntryDate;
 		}
 	}
 	
@@ -109,8 +104,11 @@ export default withApp(NativeTachyons.wrap(class HomeScreen extends React.Compon
 						/>
 						<Text cls='primaryColor f5 mb1'>Photos / Videos</Text>
 						<View cls='flx-i flx-row flx-wrap mb3'>
-							<TouchableOpacity onPress={() => alert(this.form.getValue().entrydate)}>
-								<View cls='bg-lightgray h3 w3 flx-i jcc aic'>
+							{this.props.store.newEntryScreenValues.selectedPhotos.map(uri => (
+								<Image key={uri} cls='bg-lightgray h3 w3 mr2' source={{uri}}/>
+							))}
+							<TouchableOpacity onPress={() => this.props.navigation.navigate('PhotoSelectorScreen')}>
+								<View cls='bg-lightgray h3 w3 jcc aic'>
 									<Ionicons name="ios-add-outline" size={sizes.f2} color="gray" />
 								</View>
 							</TouchableOpacity>
@@ -121,4 +119,4 @@ export default withApp(NativeTachyons.wrap(class HomeScreen extends React.Compon
 				</ScrollView>
 			)
 		}
-}))
+}))))

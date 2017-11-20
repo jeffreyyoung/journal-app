@@ -30,7 +30,7 @@ export default withApp(NativeTachyons.wrap(class HomeScreen extends React.Compon
 	
 	async componentWillMount() {
 		await this.props.app.load();
-		if (this.props.app.user.token) {
+		if (this.props.app.store.user.token) {
 			this.props.navigation.dispatch(resetAction);
 		}
 	}

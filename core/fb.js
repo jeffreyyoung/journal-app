@@ -9,7 +9,7 @@ class fb {
 	}
 	
 	async post(url, json) {
-		url += `&access_token=${this.app.user.token}`;
+		url += `&access_token=${this.app.store.user.token}`;
 		const result = await fetch(url,
 			{
 				headers: {
@@ -23,14 +23,20 @@ class fb {
 	}
 	
 	async get(url) {
-		url += `&access_token=${this.app.user.token}`;
+		url += `&access_token=${this.app.store.user.token}`;
 		const result = await fetch(url);
 		const json = await result.json();
 		return json;
 	}
 	
 	async loadPosts(){
-		let json = await this.get('https://graph.facebook.com/v2.11/me?fields=posts{status_type,message,attachments{media,type,subattachments},permalink_url,created_time,backdated_time}')
+		const json = await this.get('https://graph.facebook.com/v2.11/me?fields=posts{status_type,message,attachments{media,type,subattachments},permalink_url,created_time,backdated_time}')
+		return fbResultParser.parsePosts(json);
+	}
+	
+	async loadMorePosts(url){
+		const res = await fetch(url);
+		const json = await res.json();
 		return fbResultParser.parsePosts(json);
 	}
 	
@@ -44,6 +50,7 @@ class fb {
 }
 
 function formatEntry(entry = {}) {
+	entry.message = entry.message || '';
 	if (entry.entryTime) {
 		entry.message = entry.entryTime+appConstants.MESSAGE_TIME_SPLIT+entry.message;
 	}

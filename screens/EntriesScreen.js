@@ -7,7 +7,8 @@ import {
 	Image,
 	ScrollView,
 	ActivityIndicator,
-	RefreshControl
+	RefreshControl,
+	FlatList
 } from 'react-native';
 import formatDate from './../util/formatDate';
 import withApp from './../hocs/withApp'
@@ -18,6 +19,8 @@ import eachDay from 'date-fns/each_day'
 import addDays from 'date-fns/add_days'
 import endOfToday from 'date-fns/end_of_today'
 import parseDate from 'date-fns/parse'
+import min from 'date-fns/min'
+import max from 'date-fns/max'
 import { withNavigation } from 'react-navigation';
 
 let EntrySetPreview = NativeTachyons.wrap(({entries}) => {
@@ -43,7 +46,7 @@ let EntrySetPreview = NativeTachyons.wrap(({entries}) => {
 let Day = withApp(NativeTachyons.wrap(({app, date, entries, navigation}) => {
 	
 	let onPress = () => {
-		app.junk.defaultEntryDate = date;
+		app.store.newEntryScreenValues.defaultEntryDate = date;
 		navigation.navigate('NewEntryScreen');
 	}
 	
@@ -75,7 +78,7 @@ export default withApp(NativeTachyons.wrap(class HomeScreen extends React.Compon
 		this.state = {
 			loading: false,
 			posts: [],
-			days: {}
+			days: []
 		}
 	}
 	
@@ -83,30 +86,55 @@ export default withApp(NativeTachyons.wrap(class HomeScreen extends React.Compon
 		this.loadData();
 	}
 	
+	groupPostsIntoDays(posts) {
+		const timeStamps = posts.map(p => parseDate(p.entryTime).getTime());
+		const postsByDay = _.groupBy(posts, p => formatDate(parseDate(p.entryTime)))
+		const days = eachDay(parseDate(_.min(timeStamps)), parseDate(new Date()))
+			.reverse()
+			.map(d => {
+				return {
+					label: formatDate(d),
+					date: d,
+					entries: postsByDay[formatDate(d)]
+				}
+		})
+		return days;
+	}
+	
+	async loadMorePosts(url) {
+		// let result = await this.props.app.fb.loadPosts();
+		// const allPosts = this.state.posts.concat(result.posts)
+		// this.setState({
+		// 	posts: allPosts,
+		// 	days: this.groupPostsIntoDays(allPosts),
+		// 	nextUrl: result.nextPageUrl
+		// });
+	}
+	
 	async loadData() {
 		this.setState({loading:true});
-		let j = await this.props.app.fb.loadPosts();
+		
+		let result = await this.props.app.fb.loadPosts();
+		
 		this.setState({
 			loading: false,
-			posts: j.posts,
-			days: _.groupBy(j.posts, p => formatDate(parseDate(p.entryTime))),
-			nextPage: j.nextPage
+			posts: result.posts,
+			days: this.groupPostsIntoDays(result.posts),
+			nextUrl: result.nextPageUrl
 		});
 	}
 	
 	render() {
-		const days = eachDay(addDays(endOfToday(), -100), endOfToday()).reverse();
-		
 		return (
-				<ScrollView cls='bg-white pa2 pb5'
-					refreshControl={
-						<RefreshControl refreshing={this.state.loading}
-							onRefresh={this.loadData.bind(this)}
-						/>
-					}
-				>
-					{!this.state.loading && days.map((d, i) => <Day key={d} date={d} navigation={this.props.navigation} entries={this.state.days[formatDate(d)]}/>)}
-				</ScrollView>
-			)
-		}
+			<FlatList 
+				cls='bg-white pa2'
+				keyExtractor={(item, index) => index}
+				data={this.state.days} 
+				renderItem={({item}) => <Day key={item.label} date={item.date} navigation={this.props.navigation} entries={item.entries}/>} 
+				refreshing={this.state.loading}
+				onRefresh={this.loadData.bind(this)}
+				onEndReached={() => this.loadMorePosts(this.state.nextUrl)}
+			/>
+		)
+	}
 }))

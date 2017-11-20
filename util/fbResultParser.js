@@ -48,12 +48,12 @@ function parsePost(post) {
 }
 
 function parseData(json) {
-	const nextPage = json.posts.paging.next;
+	const nextPageUrl = json.posts.paging.next;
 	
 	const posts = json.posts.data.map(parsePost)
 	return {
 		posts,
-		nextPage
+		nextPageUrl
 	}
 }
 
